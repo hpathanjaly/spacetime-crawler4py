@@ -1,9 +1,27 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urldefrag
+from bs4 import BeautifulSoup
+from utils.tokenizer import tokenize
+import shelve
+
+subdomains = dict()
+visited = set()
+tokens = dict()
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
-    return [link for link in links if is_valid(link)]
+    valid_links = [link for link in links if is_valid(link)]
+    for link in valid_links:
+        parsed = urlparse(link)
+        subdomains[parsed.netloc] = 1 + subdomains.get(parsed.netloc, 0)
+    with open("output.txt", 'w') as file:
+        file.write("Subdomains \n")
+        for sub in subdomains:
+            file.write(f"{sub}: {subdomains[sub]}\n")
+        
+        for page in tokens:
+            file.write(f"{page}: {str(tokens[page])}\n")
+    return valid_links
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -15,12 +33,25 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    return list()
+    visited.add(url)
+    if resp.error:
+        print(f"Error in response: {resp.error}")
+        return list()
+    soup = BeautifulSoup(resp.raw_response.content, 'lxml')
+    tokens[url] = tokenize(soup.get_text())
+    a_tags = soup.find_all('a')
+    links = []
+    for tag in a_tags:
+        link, fragment = urldefrag(str(tag.get('href')))
+        links.append(link)
+    return links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
     # There are already some conditions that return False.
+
+    # Added check for urls to be within ics, cs, informatics, or stats subdomain    
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
@@ -33,7 +64,7 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()) and re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc)
 
     except TypeError:
         print ("TypeError for ", parsed)
