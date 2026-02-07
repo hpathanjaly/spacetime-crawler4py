@@ -38,5 +38,4 @@ class Worker(Thread):
                 self.frontier.add_subdomain_count(domain)
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
-            self.frontier.print_data()
             time.sleep(self.config.time_delay)
