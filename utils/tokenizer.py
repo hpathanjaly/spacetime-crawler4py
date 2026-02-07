@@ -15,7 +15,8 @@ STOPWORDS = {
     "under","until","up","very","was","wasn't","we","we'd","we'll","we're","we've",
     "were","weren't","what","what's","when","when's","where","where's","which","while",
     "who","who's","whom","why","why's","with","won't","would","wouldn't","you","you'd",
-    "you'll","you're","you've","your","yours","yourself","yourselves"
+    "you'll","you're","you've","your","yours","yourself","yourselves", 't', 's', 'd', 'm',
+    've', 'll', 'e', 'n', 'o', 'l'
 }
 
 # Time Complexity: O(N), N is the number of characters in the file
@@ -26,14 +27,14 @@ STOPWORDS = {
 def tokenize(text: str): 
     tokens = {}
     for word in text.split():
-        if word in STOPWORDS:
+        if word.lower() in STOPWORDS:
             continue
         cur_token = ""
         for char in word + " ":
             if char.isalnum() and char.isascii(): # alphanumeric chars
                 cur_token += char
             else:
-                if cur_token and cur_token not in STOPWORDS:
+                if cur_token and cur_token.lower() not in STOPWORDS:
                     tokens[cur_token] = 1 + tokens.get(cur_token, 0)
                 cur_token = ""
     return tokens

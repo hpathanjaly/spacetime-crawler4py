@@ -32,10 +32,10 @@ class Worker(Thread):
                 f"Downloaded {tbd_url}, status <{resp.status}>, "
                 f"using cache {self.config.cache_server}.")
             scraped_urls, tokens = scraper.scraper(tbd_url, resp)
+            domain = urlparse(tbd_url).netloc
             self.frontier.add_tokens(tokens)
+            self.frontier.add_subdomain_count(domain)
             for scraped_url in scraped_urls:
-                domain = urlparse(scraped_url).netloc
-                self.frontier.add_subdomain_count(domain)
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
             time.sleep(self.config.time_delay)

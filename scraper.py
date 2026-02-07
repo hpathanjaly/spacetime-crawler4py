@@ -1,13 +1,11 @@
+from datetime import datetime
 import re
 from urllib.parse import urlparse, urldefrag
 from bs4 import BeautifulSoup
 from utils.tokenizer import tokenize
-from collections import defaultdict
-from dataclasses import dataclass, field
 
-
-
-INVALID_SUBDOMAINS = {"month", "day", "year"}
+INVALID_SUBDOMAINS = {"month", "day", "year", "week"}
+INVALID_QUERIES = {"date", "ical", "share"}
 
 def scraper(url, resp):
     return extract_next_links(url, resp)
@@ -24,6 +22,9 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     if resp.error:
         print(f"Error in response: {resp.error}")
+        return list(), dict()
+    content_type = resp.raw_response.headers.get("Content-Type")
+    if 'text/html' not in content_type:
         return list(), dict()
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
     tokens = tokenize(soup.get_text())
@@ -47,10 +48,21 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        for path in INVALID_SUBDOMAINS:
-            for sub in parsed.path.lower().split('/'):
-                if path == sub:
+        for sub in parsed.path.lower().split('/'):
+            for path in INVALID_SUBDOMAINS:
+                if path in sub:
                     return False
+            date_in_path = re.match(r"\d{4}-\d{2}(?:-\d{2})?", sub)
+            if date_in_path:
+                date_str = date_in_path[0]
+                try:
+                    # Automatically handles both formats based on length
+                    format = '%Y-%m-%d' if len(date_str) == 10 else '%Y-%m'
+                    datetime.strptime(date_str, format)
+                    return False
+                except Exception:
+                    continue
+        
         
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
@@ -61,12 +73,14 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()) and \
-                re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc) and\
-                not re.match(r"(^|&)[^=]*date[^=]*=", parsed.query)
+                re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc) and \
+                not any((re.search(rf"(^|&)[^=]*{query}[^=]*=", parsed.query.lower())) for query in INVALID_QUERIES)
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+    except Exception:
+        return False
 
 if __name__ == '__main__':
     import code

@@ -115,5 +115,5 @@ class Frontier(object):
         print("50 most common words:")
         print(tokens.most_common(50))
         print("Subdomains:")
-        for subdomain, count in subdomain_counts.items():
+        for subdomain, count in sorted(subdomain_counts.items(), key=lambda item: item[1], reverse=True):
             print(f"{subdomain}, {count}")
