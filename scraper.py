@@ -2,26 +2,16 @@ import re
 from urllib.parse import urlparse, urldefrag
 from bs4 import BeautifulSoup
 from utils.tokenizer import tokenize
-import shelve
+from collections import defaultdict
+from dataclasses import dataclass, field
 
-subdomains = dict()
-visited = set()
-tokens = dict()
+
+
+INVALID_SUBDOMAINS = {"month", "day", "year"}
 
 def scraper(url, resp):
-    links = extract_next_links(url, resp)
-    valid_links = [link for link in links if is_valid(link)]
-    for link in valid_links:
-        parsed = urlparse(link)
-        subdomains[parsed.netloc] = 1 + subdomains.get(parsed.netloc, 0)
-    with open("output.txt", 'w') as file:
-        file.write("Subdomains \n")
-        for sub in subdomains:
-            file.write(f"{sub}: {subdomains[sub]}\n")
-        
-        for page in tokens:
-            file.write(f"{page}: {str(tokens[page])}\n")
-    return valid_links
+    links, tokens = extract_next_links(url, resp)
+    return links, tokens
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -33,18 +23,18 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    visited.add(url)
     if resp.error:
         print(f"Error in response: {resp.error}")
         return list()
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
-    tokens[url] = tokenize(soup.get_text())
+    tokens = tokenize(soup.get_text())
     a_tags = soup.find_all('a')
     links = []
     for tag in a_tags:
         link, fragment = urldefrag(str(tag.get('href')))
-        links.append(link)
-    return links
+        if is_valid(link):
+            links.append(link)
+    return links, tokens
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -56,6 +46,11 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        for path in INVALID_SUBDOMAINS:
+            for sub in parsed.path.lower().split('/'):
+                if path == sub:
+                    return False
+        
         return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
@@ -64,8 +59,14 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()) and re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc)
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()) and \
+                re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc) and\
+                not re.match(r"(^|&)[^=]*date[^=]*=", parsed.query)
 
     except TypeError:
         print ("TypeError for ", parsed)
         raise
+
+if __name__ == '__main__':
+    import code
+    code.interact(local=globals())

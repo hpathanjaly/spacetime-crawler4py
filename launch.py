@@ -1,3 +1,4 @@
+from collections import Counter
 from configparser import ConfigParser
 from argparse import ArgumentParser
 
@@ -13,6 +14,7 @@ def main(config_file, restart):
     config.cache_server = get_cache_server(config, restart)
     crawler = Crawler(config, restart)
     crawler.start()
+    crawler.frontier.print_data()
 
 
 if __name__ == "__main__":

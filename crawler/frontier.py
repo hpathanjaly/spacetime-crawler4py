@@ -1,3 +1,4 @@
+from collections import Counter, defaultdict
 import os
 import shelve
 
@@ -6,6 +7,9 @@ from queue import Queue, Empty
 
 from utils import get_logger, get_urlhash, normalize
 from scraper import is_valid
+
+SUB_COUNT = "subdomain_count"
+TOKENS = "tokens"
 
 class Frontier(object):
     def __init__(self, config, restart):
@@ -26,6 +30,8 @@ class Frontier(object):
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
         if restart:
+            self.save[SUB_COUNT] = defaultdict(int)
+            self.save[TOKENS] = Counter()
             for url in self.config.seed_urls:
                 self.add_url(url)
         else:
@@ -70,3 +76,27 @@ class Frontier(object):
 
         self.save[urlhash] = (url, True)
         self.save.sync()
+    
+    def add_subdomain_count(self, sub):
+        self.save[SUB_COUNT][sub] += 1
+        self.save.sync()
+    
+    def get_subdomain_count(self):
+        return self.save[SUB_COUNT]
+
+    def add_tokens(self, tokens):
+        self.save[TOKENS] += Counter(tokens)
+        self.save.sync()
+    
+    def get_tokens(self):
+        return self.save[TOKENS]
+
+    def print_data(self):
+        subdomain_counts: dict = self.get_subdomain_count()
+        tokens: Counter = self.get_tokens()
+        print(f"Total unique pages = {sum(subdomain_counts.values())}")
+        print("50 most common words:")
+        print(tokens.most_common(50))
+        print("Subdomains:")
+        for subdomain, count in subdomain_counts.items():
+            print(f"{subdomain}, {count}")
