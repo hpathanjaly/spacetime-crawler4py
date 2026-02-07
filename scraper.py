@@ -10,8 +10,7 @@ from dataclasses import dataclass, field
 INVALID_SUBDOMAINS = {"month", "day", "year"}
 
 def scraper(url, resp):
-    links, tokens = extract_next_links(url, resp)
-    return links, tokens
+    return extract_next_links(url, resp)
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -25,9 +24,11 @@ def extract_next_links(url, resp):
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     if resp.error:
         print(f"Error in response: {resp.error}")
-        return list()
+        return list(), dict()
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
     tokens = tokenize(soup.get_text())
+    # if url == ("http://www.stat.uci.edu/wp-content/uploads/JuliaPalaciosAbstract6-6-19"):
+    #     print(resp.raw_response.content)
     a_tags = soup.find_all('a')
     links = []
     for tag in a_tags:
