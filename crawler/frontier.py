@@ -48,9 +48,20 @@ class Frontier(object):
             self.save.sync()
             for url in self.config.seed_urls:
                 self.add_url(url)
-        else:
+        else:   
             self._parse_save_file()
-            if not self.save:
+            # Cold start or old shelve: ensure report keys exist.
+            if SUB_COUNT not in self.save:
+                self.save[SUB_COUNT] = defaultdict(int)
+            if TOKENS not in self.save:
+                self.save[TOKENS] = Counter()
+            if EXACT_HASHES_KEY not in self.save:
+                self.save[EXACT_HASHES_KEY] = []
+            if SIMHASH_LIST_KEY not in self.save:
+                self.save[SIMHASH_LIST_KEY] = []
+            self.save.sync()
+            # No URLs to crawl: start from seed.
+            if not self.to_be_downloaded:
                 for url in self.config.seed_urls:
                     self.add_url(url)
 
@@ -104,7 +115,8 @@ class Frontier(object):
     
     def add_subdomain_count(self, sub):
         with self.save_lock:
-            self.save[SUB_COUNT][sub] += 1
+            self.save[SUB_COUNT][sub] = self.save[SUB_COUNT].get(sub, 0) + 1
+            self.save[SUB_COUNT] = dict(self.save[SUB_COUNT])
             self.save.sync()
     
     def get_subdomain_count(self):
@@ -113,7 +125,8 @@ class Frontier(object):
 
     def add_tokens(self, tokens):
         with self.save_lock:
-            self.save[TOKENS] += Counter(tokens)
+            current = self.save.get(TOKENS, Counter())
+            self.save[TOKENS] = current + Counter(tokens)
             self.save.sync()
     
     def get_tokens(self):
@@ -141,5 +154,5 @@ class Frontier(object):
         print("50 most common words:")
         print(tokens.most_common(50))
         print("Subdomains:")
-        for subdomain, count in subdomain_counts.items():
+        for subdomain, count in sorted(subdomain_counts.items(), key=lambda item: item[0]):
             print(f"{subdomain}, {count}")

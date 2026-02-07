@@ -36,9 +36,9 @@ class Worker(Thread):
             if page_is_new:
                 self.frontier.add_tokens(tokens)
                 for scraped_url in scraped_urls:
-                    domain = urlparse(scraped_url).netloc
-                    self.frontier.add_subdomain_count(domain)
                     self.frontier.add_url(scraped_url)
+            # Count this crawled page's subdomain (unique pages per subdomain).
+            domain = urlparse(tbd_url).netloc
+            self.frontier.add_subdomain_count(domain)
             self.frontier.mark_url_complete(tbd_url)
-            self.frontier.print_data()
             time.sleep(self.config.time_delay)
