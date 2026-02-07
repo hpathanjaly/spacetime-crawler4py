@@ -10,13 +10,16 @@ from scraper import is_valid
 
 SUB_COUNT = "subdomain_count"
 TOKENS = "tokens"
-TBD = "tbd"
+EXACT_HASHES_KEY = "similarity_exact_hashes"
+SIMHASH_LIST_KEY = "similarity_simhash_list"
 
 class Frontier(object):
     def __init__(self, config, restart):
         self.logger = get_logger("FRONTIER")
         self.config = config
         self.to_be_downloaded = list()
+        self.tbd_lock = Lock()
+        self.save_lock = Lock()
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
@@ -30,24 +33,40 @@ class Frontier(object):
             os.remove(self.config.save_file)
         # Load existing save file, or create one if it does not exist.
         self.save = shelve.open(self.config.save_file)
+        try:
+            import similarity
+            digests = self.save.get(EXACT_HASHES_KEY)
+            fingerprints = self.save.get(SIMHASH_LIST_KEY)
+            similarity.restore_state(digests, fingerprints)
+        except ImportError:
+            pass
         if restart:
             self.save[SUB_COUNT] = defaultdict(int)
             self.save[TOKENS] = Counter()
-            self.save[TBD] = dict()
+            self.save[EXACT_HASHES_KEY] = []
+            self.save[SIMHASH_LIST_KEY] = []
+            self.save.sync()
             for url in self.config.seed_urls:
                 self.add_url(url)
         else:
-            # Set the frontier state with contents of save file.
             self._parse_save_file()
-            if not self.save[TBD]:
+            if not self.save:
                 for url in self.config.seed_urls:
                     self.add_url(url)
 
     def _parse_save_file(self):
-        ''' This function can be overridden for alternate saving techniques. '''
-        total_count = len(self.save[TBD])
+        skip_keys = {SUB_COUNT, TOKENS, EXACT_HASHES_KEY, SIMHASH_LIST_KEY}
+        total_count = 0
         tbd_count = 0
-        for url, completed in self.save[TBD].values():
+        for key in self.save:
+            if key in skip_keys:
+                continue
+            val = self.save[key]
+            try:
+                url, completed = val
+            except (TypeError, ValueError):
+                continue
+            total_count += 1
             if not completed and is_valid(url):
                 self.to_be_downloaded.append(url)
                 tbd_count += 1
@@ -57,46 +76,63 @@ class Frontier(object):
 
     def get_tbd_url(self):
         try:
-            return self.to_be_downloaded.pop()
+            with self.tbd_lock:
+                return self.to_be_downloaded.pop()
         except IndexError:
             return None
 
     def add_url(self, url):
         url = normalize(url)
         urlhash = get_urlhash(url)
-        if urlhash not in self.save[TBD]:
-            tbd = self.save[TBD]
-            tbd[urlhash] = (url, False)
-            self.save[TBD] = tbd
-            self.save.sync()
-            self.to_be_downloaded.append(url)
-
+        with self.save_lock:
+            if urlhash not in self.save:
+                self.save[urlhash] = (url, False)
+                self.save.sync()
+                with self.tbd_lock:
+                    self.to_be_downloaded.append(url)
+    
     def mark_url_complete(self, url):
         urlhash = get_urlhash(url)
-        if urlhash not in self.save[TBD]:
-            # This should not happen.
-            self.logger.error(
-                f"Completed url {url}, but have not seen it before.")
-        tbd = self.save[TBD]
-        tbd[urlhash] = (url, True)
-        self.save[TBD] = tbd
-        self.save.sync()
+        with self.save_lock:
+            if urlhash not in self.save:
+                # This should not happen.
+                self.logger.error(
+                    f"Completed url {url}, but have not seen it before.")
+            
+            self.save[urlhash] = (url, True)
+            self.save.sync()
     
-    def add_subdomain_count(self, domain):
-        counts = self.save[SUB_COUNT]
-        counts[domain] += 1
-        self.save[SUB_COUNT] = counts
-        self.save.sync()
+    def add_subdomain_count(self, sub):
+        with self.save_lock:
+            self.save[SUB_COUNT][sub] += 1
+            self.save.sync()
     
     def get_subdomain_count(self):
-        return self.save[SUB_COUNT]
+        with self.save_lock:
+            return self.save[SUB_COUNT]
 
     def add_tokens(self, tokens):
-        self.save[TOKENS] += Counter(tokens)
-        self.save.sync()
+        with self.save_lock:
+            self.save[TOKENS] += Counter(tokens)
+            self.save.sync()
     
     def get_tokens(self):
-        return self.save[TOKENS]
+        with self.save_lock:
+            return self.save[TOKENS]
+
+    def is_duplicate_page(self, tokens):
+        try:
+            import similarity
+        except ImportError:
+            return False
+        if similarity.check_duplicate(tokens):
+            return True
+        with self.save_lock:
+            digests, fingerprints = similarity.get_state_for_save()
+            self.save[EXACT_HASHES_KEY] = digests
+            self.save[SIMHASH_LIST_KEY] = fingerprints
+            self.save.sync()
+        return False
 
     def print_data(self):
         subdomain_counts: dict = self.get_subdomain_count()
