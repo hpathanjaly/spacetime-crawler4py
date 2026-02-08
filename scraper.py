@@ -1,10 +1,10 @@
 from datetime import datetime
 import re
-from urllib.parse import urlparse, urldefrag
+from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup
 from utils.tokenizer import tokenize
 
-INVALID_SUBDOMAINS = {}
+INVALID_SUBDOMAINS = {"doku.php"}
 INVALID_QUERIES = {"ical", "share"}
 ALLOWED_DOMAINS = ["ics", "cs", "informatics", "stat"]
 
@@ -25,14 +25,18 @@ def extract_next_links(url, resp):
         print(f"Error in response: {resp.error}")
         return list(), dict()
     content_type = resp.raw_response.headers.get("Content-Type")
-    if 'text/html' not in content_type:
+    if not content_type or 'text/html' not in content_type:
         return list(), dict()
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
     tokens = tokenize(soup.get_text())
     a_tags = soup.find_all('a')
     links = []
     for tag in a_tags:
-        link, fragment = urldefrag(str(tag.get('href')))
+        link = ""
+        href = str(tag.get('href'))
+        if href:
+            link = urljoin(url, href)
+        link, fragment = urldefrag(link)
         if is_valid(link):
             links.append(link)
     return links, tokens
