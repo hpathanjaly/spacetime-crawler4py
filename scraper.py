@@ -4,6 +4,8 @@ from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup
 from utils.tokenizer import tokenize
 
+MIN_TEXT_RATIO = 0.15
+MIN_UNIQUE_TOKEN_TO_COUNT_RATIO = 0.25
 INVALID_SUBDOMAINS = {"doku.php"}
 INVALID_QUERIES = {"ical", "share"}
 
@@ -20,14 +22,19 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    tokens = dict()
     if resp.error:
         print(f"Error in response: {resp.error}")
-        return list(), dict()
+        return list(), tokens
     content_type = resp.raw_response.headers.get("Content-Type")
     if not content_type or 'text/html' not in content_type:
-        return list(), dict()
+        return list(), tokens
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
-    tokens = tokenize(soup.get_text())
+    text = soup.get_text()
+    tokens = tokenize(text)
+    text_ratio = float(len(text)) / max(len(resp.raw_content.content), 1)
+    if text_ratio <= MIN_TEXT_RATIO or len(tokens) / sum(tokens.values()) < MIN_UNIQUE_TOKEN_TO_COUNT_RATIO:
+        tokens = dict()
     a_tags = soup.find_all('a')
     links = []
     for tag in a_tags:
