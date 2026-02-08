@@ -9,9 +9,6 @@ from urllib.parse import urlparse
 import scraper
 import time
 
-MIN_TOKENS = 50
-MAX_TOKENS = float("inf")
-
 class Worker(Thread):
     def __init__(self, worker_id, config, frontier):
         self.logger = get_logger(f"Worker-{worker_id}", "Worker")
@@ -40,7 +37,7 @@ class Worker(Thread):
             if tokens:
                 self.frontier.update_longest_page(tbd_url, tokens)
             page_is_new = not self.frontier.is_duplicate_page(tokens)
-            if page_is_new and MIN_TOKENS <= sum(tokens.values()) <= MAX_TOKENS:
+            if page_is_new:
                 self.frontier.add_tokens(tokens)
                 for scraped_url in scraped_urls:
                     self.frontier.add_url(scraped_url)
