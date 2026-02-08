@@ -27,15 +27,17 @@ class Worker(Thread):
             if not tbd_url:
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
-            resp = download(tbd_url, self.config, self.logger)
-            self.logger.info(
-                f"Downloaded {tbd_url}, status <{resp.status}>, "
-                f"using cache {self.config.cache_server}.")
-            scraped_urls, tokens = scraper.scraper(tbd_url, resp)
             domain = urlparse(tbd_url).netloc
+            lock = self.frontier.get_domain_lock(domain)
+            with lock:
+                resp = download(tbd_url, self.config, self.logger)
+                self.logger.info(
+                    f"Downloaded {tbd_url}, status <{resp.status}>, "
+                    f"using cache {self.config.cache_server}.")
+                time.sleep(self.config.time_delay)
+            scraped_urls, tokens = scraper.scraper(tbd_url, resp)
             self.frontier.add_tokens(tokens)
             self.frontier.add_subdomain_count(domain)
             for scraped_url in scraped_urls:
                 self.frontier.add_url(scraped_url)
             self.frontier.mark_url_complete(tbd_url)
-            time.sleep(self.config.time_delay)

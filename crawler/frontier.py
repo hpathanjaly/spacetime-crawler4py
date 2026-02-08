@@ -20,6 +20,8 @@ class Frontier(object):
         self.tbd_lock = Lock()
         self.count_lock = Lock()
         self.token_lock = Lock()
+        self.domain_locks = dict()
+        self.locks_lock = Lock()
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
@@ -117,3 +119,9 @@ class Frontier(object):
         print("Subdomains:")
         for subdomain, count in sorted(subdomain_counts.items(), key=lambda item: item[1], reverse=True):
             print(f"{subdomain}, {count}")
+    
+    def get_domain_lock(self, domain):
+        with self.locks_lock:
+            if domain not in self.domain_locks:
+                self.domain_locks[domain] = Lock()
+            return self.domain_locks[domain]
