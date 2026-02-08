@@ -1,15 +1,15 @@
 from datetime import datetime
 import re
-from urllib.parse import urlparse, urldefrag
+from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup
 from utils.tokenizer import tokenize
 
-INVALID_SUBDOMAINS = {"month", "day", "year", "week"}
-INVALID_QUERIES = {"date", "ical", "share"}
+INVALID_SUBDOMAINS = {"doku.php"}
+INVALID_QUERIES = {"ical", "share"}
+ALLOWED_DOMAINS = ["ics", "cs", "informatics", "stat"]
 
 def scraper(url, resp):
-    links, tokens = extract_next_links(url, resp)
-    return links, tokens
+    return extract_next_links(url, resp)
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -25,14 +25,18 @@ def extract_next_links(url, resp):
         print(f"Error in response: {resp.error}")
         return list(), dict()
     content_type = resp.raw_response.headers.get("Content-Type")
-    if 'text/html' not in content_type:
+    if not content_type or 'text/html' not in content_type:
         return list(), dict()
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
     tokens = tokenize(soup.get_text())
     a_tags = soup.find_all('a')
     links = []
     for tag in a_tags:
-        link, fragment = urldefrag(str(tag.get('href')))
+        link = ""
+        href = str(tag.get('href'))
+        if href:
+            link = urljoin(url, href)
+        link, fragment = urldefrag(link)
         if is_valid(link):
             links.append(link)
     return links, tokens
@@ -44,23 +48,14 @@ def is_valid(url):
 
     # Added check for urls to be within ics, cs, informatics, or stats subdomain    
     try:
+        date_re = r"\d{4}-\d{2}(?:-\d{2})?"
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        for sub in parsed.path.lower().split('/'):
-            for path in INVALID_SUBDOMAINS:
+        for path in INVALID_SUBDOMAINS:
+            for sub in parsed.path.lower().split('/'):
                 if path in sub:
                     return False
-            date_in_path = re.match(r"\d{4}-\d{2}(?:-\d{2})?", sub)
-            if date_in_path:
-                date_str = date_in_path[0]
-                try:
-                    # Automatically handles both formats based on length
-                    format = '%Y-%m-%d' if len(date_str) == 10 else '%Y-%m'
-                    datetime.strptime(date_str, format)
-                    return False
-                except Exception:
-                    continue
         
         
         return not re.match(
@@ -72,9 +67,10 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower()) and \
-                re.match(r".*\.(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc) and \
-                not any((re.search(rf"(^|&)[^=]*{query}[^=]*=", parsed.query.lower())) for query in INVALID_QUERIES)
-
+                re.match(r"(.*\.)?(ics|cs|informatics|stat)\.uci\.edu.*", parsed.netloc) and \
+                not any(re.search(date_re, query) or query in INVALID_QUERIES for query in re.split(r'[&=]', parsed.query)) and \
+                not re.search(date_re, parsed.path)
+    
     except TypeError:
         print ("TypeError for ", parsed)
         raise
