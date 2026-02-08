@@ -49,7 +49,7 @@ class Frontier(object):
             pass
         
         if restart:
-            self.save[SUB_COUNT] = defaultdict(int)
+            self.save[SUB_COUNT] = {}
             self.save[TOKENS] = Counter()
             self.save[TBD] = dict()
             self.save[LONGEST_PAGE_KEY] = (0, "")
@@ -61,7 +61,7 @@ class Frontier(object):
         else:   
             self._parse_save_file()
             if SUB_COUNT not in self.save:
-                self.save[SUB_COUNT] = defaultdict(int)
+                self.save[SUB_COUNT] = {}
             if TOKENS not in self.save:
                 self.save[TOKENS] = Counter()
             if LONGEST_PAGE_KEY not in self.save:
@@ -120,7 +120,7 @@ class Frontier(object):
     def add_subdomain_count(self, domain):
         with self.count_lock:
             counts = self.save[SUB_COUNT]
-            counts[domain] += 1
+            counts[domain] = counts.get(domain, 0) + 1
             self.save[SUB_COUNT] = counts
             self.save.sync()
     

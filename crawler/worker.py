@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import scraper
 import time
 
-MIN_TOKENS = 0
+MIN_TOKENS = 50
 MAX_TOKENS = float("inf")
 
 class Worker(Thread):
@@ -46,6 +46,6 @@ class Worker(Thread):
                     self.frontier.add_url(scraped_url)
             # Count this crawled page's subdomain (unique pages per subdomain).
             domain = urlparse(tbd_url).netloc
-            if resp.status == "200" and not resp.error:
+            if resp.status == 200 and not resp.error:
                 self.frontier.add_subdomain_count(domain)
             self.frontier.mark_url_complete(tbd_url)

@@ -32,9 +32,11 @@ def extract_next_links(url, resp):
     links = []
     for tag in a_tags:
         link = ""
-        href = str(tag.get('href'))
-        if href:
-            link = urljoin(url, href)
+        href = tag.get('href')
+        if href is None or (isinstance(href, str) and not href.strip()):
+            continue
+        href = str(href)
+        link = urljoin(url, href)
         link, fragment = urldefrag(link)
         if is_valid(link):
             links.append(link)
