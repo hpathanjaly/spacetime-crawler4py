@@ -20,12 +20,13 @@ class Frontier(object):
         self.logger = get_logger("FRONTIER")
         self.config = config
         self.to_be_downloaded = list()
+        self.domain_locks = dict()
         self.tbd_lock = Lock()
         self.count_lock = Lock()
         self.token_lock = Lock()
         self.longest_lock = Lock()
-        self.domain_locks = dict()
         self.locks_lock = Lock()
+        self.simhash_lock = Lock()
         
         if not os.path.exists(self.config.save_file) and not restart:
             # Save file does not exist, but request to load save.
@@ -46,6 +47,7 @@ class Frontier(object):
             similarity.restore_state(digests, fingerprints)
         except ImportError:
             pass
+        
         if restart:
             self.save[SUB_COUNT] = defaultdict(int)
             self.save[TOKENS] = Counter()
@@ -153,7 +155,7 @@ class Frontier(object):
             return False
         if similarity.check_duplicate(tokens):
             return True
-        with self.save_lock:
+        with self.simhash_lock:
             digests, fingerprints = similarity.get_state_for_save()
             self.save[EXACT_HASHES_KEY] = digests
             self.save[SIMHASH_LIST_KEY] = fingerprints

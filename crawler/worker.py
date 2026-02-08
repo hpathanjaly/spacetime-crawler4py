@@ -9,7 +9,8 @@ from urllib.parse import urlparse
 import scraper
 import time
 
-
+MIN_TOKENS = 0
+MAX_TOKENS = float("inf")
 
 class Worker(Thread):
     def __init__(self, worker_id, config, frontier):
@@ -39,11 +40,12 @@ class Worker(Thread):
             if tokens:
                 self.frontier.update_longest_page(tbd_url, tokens)
             page_is_new = not self.frontier.is_duplicate_page(tokens)
-            if page_is_new:
+            if page_is_new and MIN_TOKENS <= sum(tokens.values()) <= MAX_TOKENS:
                 self.frontier.add_tokens(tokens)
                 for scraped_url in scraped_urls:
                     self.frontier.add_url(scraped_url)
             # Count this crawled page's subdomain (unique pages per subdomain).
             domain = urlparse(tbd_url).netloc
-            self.frontier.add_subdomain_count(domain)
+            if resp.status == "200" and not resp.error:
+                self.frontier.add_subdomain_count(domain)
             self.frontier.mark_url_complete(tbd_url)

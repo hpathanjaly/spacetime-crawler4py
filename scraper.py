@@ -6,7 +6,6 @@ from utils.tokenizer import tokenize
 
 INVALID_SUBDOMAINS = {"doku.php"}
 INVALID_QUERIES = {"ical", "share"}
-ALLOWED_DOMAINS = ["ics", "cs", "informatics", "stat"]
 
 def scraper(url, resp):
     return extract_next_links(url, resp)
@@ -48,10 +47,11 @@ def is_valid(url):
 
     # Added check for urls to be within ics, cs, informatics, or stats subdomain    
     try:
-        date_re = r"\d{4}-\d{2}(?:-\d{2})?"
+        date_re = r"\d{4}-\d{2}(?:-\d{2})?" # 2025-05-15, 2025-05
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
+        
         for path in INVALID_SUBDOMAINS:
             for sub in parsed.path.lower().split('/'):
                 if path in sub:
