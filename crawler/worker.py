@@ -36,6 +36,8 @@ class Worker(Thread):
                     f"using cache {self.config.cache_server}.")
                 time.sleep(self.config.time_delay)
             scraped_urls, tokens = scraper.scraper(tbd_url, resp)
+            if tokens:
+                self.frontier.update_longest_page(tbd_url, tokens)
             page_is_new = not self.frontier.is_duplicate_page(tokens)
             if page_is_new:
                 self.frontier.add_tokens(tokens)

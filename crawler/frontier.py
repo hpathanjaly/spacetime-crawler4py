@@ -11,6 +11,7 @@ from scraper import is_valid
 SUB_COUNT = "subdomain_count"
 TOKENS = "tokens"
 TBD = "tbd"
+LONGEST_PAGE_KEY = "longest_page"
 EXACT_HASHES_KEY = "similarity_exact_hashes"
 SIMHASH_LIST_KEY = "similarity_simhash_list"
 
@@ -22,6 +23,7 @@ class Frontier(object):
         self.tbd_lock = Lock()
         self.count_lock = Lock()
         self.token_lock = Lock()
+        self.longest_lock = Lock()
         self.domain_locks = dict()
         self.locks_lock = Lock()
         
@@ -48,6 +50,7 @@ class Frontier(object):
             self.save[SUB_COUNT] = defaultdict(int)
             self.save[TOKENS] = Counter()
             self.save[TBD] = dict()
+            self.save[LONGEST_PAGE_KEY] = (0, "")
             self.save[EXACT_HASHES_KEY] = []
             self.save[SIMHASH_LIST_KEY] = []
             self.save.sync()
@@ -59,6 +62,8 @@ class Frontier(object):
                 self.save[SUB_COUNT] = defaultdict(int)
             if TOKENS not in self.save:
                 self.save[TOKENS] = Counter()
+            if LONGEST_PAGE_KEY not in self.save:
+                self.save[LONGEST_PAGE_KEY] = (0, "")
             if EXACT_HASHES_KEY not in self.save:
                 self.save[EXACT_HASHES_KEY] = []
             if SIMHASH_LIST_KEY not in self.save:
@@ -130,6 +135,17 @@ class Frontier(object):
         with self.token_lock:
             return self.save[TOKENS]
 
+    def update_longest_page(self, url, tokens):
+        """Update longest page if this page has more words. tokens is word -> count dict."""
+        word_count = sum(tokens.values()) if tokens else 0
+        if word_count <= 0:
+            return
+        with self.longest_lock:
+            current = self.save.get(LONGEST_PAGE_KEY, (0, ""))
+            if word_count > current[0]:
+                self.save[LONGEST_PAGE_KEY] = (word_count, url)
+                self.save.sync()
+
     def is_duplicate_page(self, tokens):
         try:
             import similarity
@@ -147,7 +163,9 @@ class Frontier(object):
     def print_data(self):
         subdomain_counts: dict = self.get_subdomain_count()
         tokens: Counter = self.get_tokens()
+        longest = self.save.get(LONGEST_PAGE_KEY, (0, ""))
         print(f"Total unique pages = {sum(subdomain_counts.values())}")
+        print(f"Longest page: {longest[1]} ({longest[0]} words)")
         print("50 most common words:")
         print(tokens.most_common(50))
         print("Subdomains:")
