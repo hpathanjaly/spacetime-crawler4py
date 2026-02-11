@@ -1,4 +1,3 @@
-from datetime import datetime
 import re
 from urllib.parse import urlparse, urldefrag, urljoin
 from bs4 import BeautifulSoup
@@ -6,7 +5,8 @@ from utils.tokenizer import tokenize
 
 MIN_TEXT_RATIO = 0.15
 MIN_UNIQUE_TOKEN_TO_COUNT_RATIO = 0.25
-INVALID_SUBDOMAINS = {"doku.php"}
+INVALID_DOMAINS = {"grape.ics.uci.edu"}
+INVALID_SUBDOMAINS = {"/doku.php/", "/~eppstein/junkyard/", "/~eppstein/pix/"}
 INVALID_QUERIES = {"ical", "share"}
 
 def scraper(url, resp):
@@ -32,7 +32,7 @@ def extract_next_links(url, resp):
     soup = BeautifulSoup(resp.raw_response.content, 'lxml')
     text = soup.get_text()
     tokens = tokenize(text)
-    text_ratio = float(len(text)) / max(len(resp.raw_content.content), 1)
+    text_ratio = float(len(text)) / max(len(resp.raw_response.content), 1)
     if text_ratio <= MIN_TEXT_RATIO or len(tokens) / sum(tokens.values()) < MIN_UNIQUE_TOKEN_TO_COUNT_RATIO:
         tokens = dict()
     a_tags = soup.find_all('a')
@@ -58,13 +58,15 @@ def is_valid(url):
     try:
         date_re = r"\d{4}-\d{2}(?:-\d{2})?" # 2025-05-15, 2025-05
         parsed = urlparse(url)
-        if parsed.scheme not in set(["http", "https"]):
+        if parsed.scheme not in set(["http", "https"]) or \
+            parsed.netloc in INVALID_DOMAINS or \
+            "YOUR_IP" in parsed.netloc:
             return False
         
+        cur_path = parsed.path.lower() + '/'
         for path in INVALID_SUBDOMAINS:
-            for sub in parsed.path.lower().split('/'):
-                if path in sub:
-                    return False
+            if path in cur_path:
+                return False
         
         
         return not re.match(
