@@ -1,0 +1,117 @@
+Final Report - Alan Yuen, Hari Pathanjaly, Yashas Raman
+
+Net IDs: IR UW26 55108131, 49323976, 60641943
+1. Total unique pages = 14814
+
+2. Longest page: https://cml.ics.uci.edu/category/aiml (16480 words)
+
+3. 50 most common words:
+[('1', 8122), ('will', 8107), ('can', 7586), ('2', 6976), ('University', 6680), ('data', 6322), ('Computer', 5352), ('3', 4979), ('Irvine', 4767), ('4', 4628), ('time', 4595), ('UCI', 4204),
+ ('Research', 4157), ('one', 4124), ('Science', 4056), ('Software', 3955), ('10', 3904), ('ICS', 3816), ('research', 3606), ('learning', 3599), ('Information', 3555), ('also', 3529), ('work', 3504), 
+ ('edu', 3367), ('use', 3359), ('11', 3237), ('5', 3224), ('Eppstein', 3222), ('uci', 3178), ('based', 3086), ('California', 3084), ('models', 3076), ('Publications', 3053), ('information', 3037), 
+ ('using', 2971), ('software', 2961), ('Dechter', 2953), ('new', 2938), ('Learning', 2857), ('UC', 2836), ('Engineering', 2774), ('04', 2768), ('Systems', 2742), ('Conference', 2717), ('students', 2698), 
+ ('first', 2695), ('2021', 2654), ('Rina', 2604), ('J', 2590), ('ics', 2582)]
+
+4. Subdomains:
+accessibility.ics.uci.edu, 6
+acoi.ics.uci.edu, 119
+aiclub.ics.uci.edu, 1
+archive-beta.ics.uci.edu, 11
+archive.ics.uci.edu, 200
+asterix.ics.uci.edu, 7
+betapro.proteomics.ics.uci.edu, 3
+capstone.cs.uci.edu, 8
+cdb.ics.uci.edu, 49
+cert.ics.uci.edu, 34
+chemdb.ics.uci.edu, 48
+chenli.ics.uci.edu, 10
+circadiomics.ics.uci.edu, 6
+cloudberry.ics.uci.edu, 43
+cml.ics.uci.edu, 265
+code.ics.uci.edu, 14
+computableplant.ics.uci.edu, 118
+courselisting.ics.uci.edu, 5
+create.ics.uci.edu, 7
+cs.ics.uci.edu, 12
+cs.uci.edu, 2
+cwicsocal18.ics.uci.edu, 12
+cyberclub.ics.uci.edu, 11
+cybert.ics.uci.edu, 27
+dgillen.ics.uci.edu, 32
+ds4all.ics.uci.edu, 5
+duttgroup.ics.uci.edu, 146
+dynamo.ics.uci.edu, 33
+edgelab.ics.uci.edu, 7
+emj.ics.uci.edu, 45
+evoke.ics.uci.edu, 2
+flamingo.ics.uci.edu, 29
+fr.ics.uci.edu, 3
+frost.ics.uci.edu, 1
+futurehealth.ics.uci.edu, 177
+graphics.ics.uci.edu, 8
+graphmod.ics.uci.edu, 1
+hack.ics.uci.edu, 2
+hai.ics.uci.edu, 7
+hobbes.ics.uci.edu, 11
+hpi.ics.uci.edu, 5
+i-sensorium.ics.uci.edu, 5
+iasl.ics.uci.edu, 1
+icde2023.ics.uci.edu, 46
+ics.uci.edu, 2434
+industryshowcase.ics.uci.edu, 23
+informatics.ics.uci.edu, 2
+informatics.uci.edu, 3
+insite.ics.uci.edu, 9
+intranet.ics.uci.edu, 1
+ipubmed.ics.uci.edu, 1
+isg.ics.uci.edu, 321
+jgarcia.ics.uci.edu, 40
+luci.ics.uci.edu, 4
+mailman.ics.uci.edu, 40
+malek.ics.uci.edu, 1
+mcs.ics.uci.edu, 12
+mdogucu.ics.uci.edu, 1
+mds.ics.uci.edu, 8
+mhcid.ics.uci.edu, 20
+mlphysics.ics.uci.edu, 154
+motifmap.ics.uci.edu, 2
+mover.ics.uci.edu, 24
+mswe.ics.uci.edu, 11
+mupro.proteomics.ics.uci.edu, 3
+nalini.ics.uci.edu, 7
+ngs.ics.uci.edu, 3051
+oai.ics.uci.edu, 5
+pepito.proteomics.ics.uci.edu, 5
+plrg.ics.uci.edu, 84
+psearch.ics.uci.edu, 1
+radicle.ics.uci.edu, 6
+redmiles.ics.uci.edu, 1
+riscit.ics.uci.edu, 3
+scale.ics.uci.edu, 7
+scratch.proteomics.ics.uci.edu, 4
+seal.ics.uci.edu, 50
+selectpro.proteomics.ics.uci.edu, 7
+sherlock.ics.uci.edu, 7
+stairs.ics.uci.edu, 4
+stat.ics.uci.edu, 11
+stat.uci.edu, 2
+statconsulting.ics.uci.edu, 5
+statistics-stage.ics.uci.edu, 10
+student-council.ics.uci.edu, 7
+studentcouncil.ics.uci.edu, 7
+summeracademy.ics.uci.edu, 6
+tad.ics.uci.edu, 3
+tastier.ics.uci.edu, 1
+tutoring.ics.uci.edu, 5
+ugradforms.ics.uci.edu, 1
+unite.ics.uci.edu, 10
+vision.ics.uci.edu, 213
+wics.ics.uci.edu, 1685
+wiki.ics.uci.edu, 1
+www-db.ics.uci.edu, 25
+www.cs.uci.edu, 7
+www.ics.uci.edu, 3448
+www.informatics.ics.uci.edu, 1
+www.informatics.uci.edu, 1170
+www.stat.uci.edu, 250
+xtune.ics.uci.edu, 6
